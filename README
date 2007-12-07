@@ -11,7 +11,8 @@ Prerequisites:
 		  you may need to tweak this on your system.
 		- a 1.2.1 or better version will do just fine (but later versions
 		  have more bugfixes and better support for some platforms).
-	b) LUA 5.0
+	b) LUA 5.1
+		- pre 5.1 versions are not yet supported
 
 	c) LKL - if you want to run LKLFTPD through LKL you'll obviously need LKL.
 		- check on http://ixlabs.cs.pub.ro/linux-kernel-library/ for details about LKL.
