@@ -1,0 +1,192 @@
+
+dirops.c,594
+#define BUF_SIZE BUF_SIZE6,66
+static apr_status_t dir_cleanup(void *thedir)dir_cleanup9,90
+apr_status_t lkl_dir_open(lkl_dir_t **new, const char *dirname,lkl_dir_open18,232
+apr_status_t lkl_dir_close(lkl_dir_t *thedir)lkl_dir_close39,865
+apr_status_t lkl_dir_make(const char *path, apr_fileperms_t perm,lkl_dir_make45,982
+apr_status_t lkl_dir_remove(const char *path, apr_pool_t *pool)lkl_dir_remove55,1208
+struct dirent * lkl_readdir(lkl_dir_t *thedir)lkl_readdir64,1341
+apr_status_t lkl_dir_read(apr_finfo_t * finfo, apr_int32_t wanted, lkl_dir_t * thedir)lkl_dir_read83,1767
+
+disk.c,170
+unsigned long lkl_disk_get_sectors(void *file)lkl_disk_get_sectors5,53
+int lkl_disk_do_rw(void *_file, unsigned long sector, unsigned long nsect,lkl_disk_do_rw16,246
+
+fileops.c,1789
+#define APR_FILE_BUFSIZE APR_FILE_BUFSIZE8,139
+apr_status_t lkl_file_flush_locked(lkl_file_t *thefile)lkl_file_flush_locked10,170
+apr_status_t lkl_file_flush(lkl_file_t *thefile)lkl_file_flush34,591
+static apr_status_t file_cleanup(lkl_file_t *file)file_cleanup50,901
+apr_status_t lkl_unix_file_cleanup(void *thefile)lkl_unix_file_cleanup71,1254
+apr_status_t lkl_unix_child_file_cleanup(void *thefile)lkl_unix_child_file_cleanup83,1521
+apr_status_t lkl_file_open(lkl_file_t **new, const char *fname,lkl_file_open89,1614
+apr_status_t lkl_file_close(lkl_file_t *file)lkl_file_close207,3698
+static apr_status_t lkl_wait_for_io_or_timeout(lkl_file_t *f, int for_read)lkl_wait_for_io_or_timeout212,3821
+static apr_status_t file_read_buffered(lkl_file_t *thefile, void *buf,file_read_buffered234,4205
+apr_status_t lkl_file_read(lkl_file_t *thefile, void *buf,lkl_file_read295,5452
+apr_status_t lkl_file_write(lkl_file_t *thefile, const void *buf,lkl_file_write370,6698
+apr_status_t lkl_file_read_full(lkl_file_t *thefile, void *buf,lkl_file_read_full461,8556
+apr_status_t lkl_file_write_full(lkl_file_t *thefile, const void *buf,lkl_file_write_full484,8990
+static apr_status_t setptr(lkl_file_t *thefile, apr_off_t pos )setptr507,9449
+apr_status_t lkl_file_seek(lkl_file_t *thefile, apr_seek_where_t where, apr_off_t *offset)lkl_file_seek541,10095
+apr_status_t lkl_file_eof(lkl_file_t *fptr)lkl_file_eof593,10985
+apr_status_t lkl_file_remove(const char *path, apr_pool_t *pool)lkl_file_remove601,11099
+apr_status_t lkl_file_rename(const char *from_path, const char *to_path,lkl_file_rename609,11233
+apr_status_t lkl_file_lock(lkl_file_t *thefile, int type)lkl_file_lock618,11410
+apr_status_t lkl_file_unlock(lkl_file_t *thefile)lkl_file_unlock639,11844
+
+filestat.c,1031
+#define __KERNEL____KERNEL__3,22
+apr_fileperms_t lkl_unix_mode2perms(mode_t mode)lkl_unix_mode2perms12,134
+mode_t lkl_unix_perms2mode(apr_fileperms_t perms)lkl_unix_perms2mode46,787
+static apr_filetype_e filetype_from_mode(mode_t mode)filetype_from_mode80,1430
+static void fill_out_finfo(apr_finfo_t *finfo, struct stat *info,apr_int32_t wanted)fill_out_finfo114,1960
+apr_status_t lkl_file_info_get_locked(apr_finfo_t *finfo, apr_int32_t wanted,lkl_file_info_get_locked132,2675
+apr_status_t lkl_file_info_get(apr_finfo_t *finfo, apr_int32_t wanted, lkl_file_t *thefile)lkl_file_info_get156,3228
+apr_status_t lkl_file_perms_set(const char *fname, apr_fileperms_t perms)lkl_file_perms_set178,3723
+apr_status_t lkl_file_attrs_set(const char *fname, apr_fileattrs_t attributes,lkl_file_attrs_set190,3947
+apr_status_t lkl_file_mtime_set(const char *fname, apr_time_t mtime,lkl_file_mtime_set243,5201
+apr_status_t lkl_stat(apr_finfo_t *finfo,const char *fname, apr_int32_t wanted, apr_pool_t *pool)lkl_stat268,5730
+
+lklops.c,2060
+volatile int shutting_down = 0;shutting_down19,348
+static apr_pool_t *pool;pool20,380
+struct _thread_info {_thread_info22,406
+        apr_thread_t *thread;thread23,428
+        apr_thread_mutex_t *sched_mutex;sched_mutex24,458
+	int dead;dead25,499
+struct kernel_thread_helper_arg {kernel_thread_helper_arg28,514
+        int (*fn)(void*);fn29,548
+        void *arg;arg30,574
+        struct _thread_info *pti;pti31,593
+static int debug_thread_count=0;debug_thread_count34,631
+void* linux_thread_info_alloc(void)linux_thread_info_alloc36,665
+void linux_context_switch(void *prev, void *next)linux_context_switch49,968
+apr_thread_mutex_t *kth_mutex;kth_mutex65,1440
+void* APR_THREAD_FUNC kernel_thread_helper(apr_thread_t *thr, void *arg)kernel_thread_helper67,1472
+void linux_free_thread(void *arg)linux_free_thread79,1870
+int linux_new_thread(int (*fn)(void*), void *arg, void *pti)linux_new_thread86,2041
+	apr_thread_mutex_t *lock;lock102,2489
+	int count;count103,2516
+	apr_thread_cond_t *cond;cond104,2528
+} apr_sem_t;apr_sem_t105,2554
+unsigned long long linux_time(void)linux_time107,2568
+static unsigned long long timer_exp;timer_exp116,2711
+static apr_file_t *events_pipe_in, *events_pipe_out;events_pipe_in117,2748
+static apr_file_t *events_pipe_in, *events_pipe_out;events_pipe_out117,2748
+static apr_pollset_t *pollset;pollset118,2801
+void linux_timer(unsigned long delta)linux_timer120,2833
+void linux_exit_idle(void)linux_exit_idle128,2941
+void linux_enter_idle(int halted)linux_enter_idle136,3047
+long linux_panic_blink(long time)linux_panic_blink162,3550
+static void *_phys_mem;_phys_mem168,3612
+void linux_mem_init(unsigned long *phys_mem, unsigned long *phys_mem_size)linux_mem_init170,3637
+void linux_halt(void)linux_halt176,3797
+static struct linux_native_operations lnops = {lnops180,3841
+void* APR_THREAD_FUNC init_thread(apr_thread_t *thr, void *arg)init_thread196,4243
+void lkl_init(int (*init_2)(void))lkl_init203,4393
+void lkl_fini(unsigned int flag)lkl_fini235,5114
+
+lua_main.c,396
+lua_State* L;L8,128
+apr_pool_t * gp;gp9,142
+int luk_stat(lua_State * L)luk_stat10,159
+int luk_get_pid(lua_State * L)luk_get_pid40,816
+static const struct luaL_reg fslib[] = {fslib57,1182
+static apr_status_t lua_lkl_register(lua_State * L, apr_pool_t * root_pool)lua_lkl_register73,1501
+apr_status_t lua_lkl_main(const char * script_file, apr_pool_t * root_pool)lua_lkl_main103,1837
+
+main.c,769
+apr_pool_t	* root_pool;root_pool22,460
+static const char *script_name="default.lua";script_name24,485
+static const char *disk_image="disk";disk_image25,531
+static const char *fs_type;fs_type26,569
+static int ro=0;ro27,597
+static dev_t devno;devno28,614
+static apr_file_t *disk_file;disk_file29,634
+static int init_err;init_err30,664
+apr_thread_mutex_t *wait_init;wait_init34,708
+int lkl_init_2(void)lkl_init_236,740
+static const apr_getopt_option_t opt_option[] = {opt_option59,1220
+void show_help(const char *name)show_help71,1695
+static int parse_command_line(int argc, char const *const * argv)parse_command_line85,1997
+int main(int argc, char const *const * argv, char const *const * engv)main125,2607
+int *stupidGdb;stupidGdb193,4347
+
+syscall_helpers.c,442
+static apr_thread_mutex_t *syscall_mutex;syscall_mutex4,54
+static apr_pool_t *syscall_pool;syscall_pool5,96
+static apr_thread_mutex_t *wait_syscall_mutex;wait_syscall_mutex6,129
+void syscall_helpers_init(void)syscall_helpers_init8,177
+void syscall_helpers_fini(void)syscall_helpers_fini16,468
+void syscall_done(void *arg)syscall_done23,581
+void syscall_enter(void)syscall_enter28,661
+void syscall_exit(void)syscall_exit33,730
+
+syscalls.c,2445
+#define SYSCALL_REQ(SYSCALL_REQ15,242
+long wrapper_sys_sync(void)wrapper_sys_sync28,531
+static struct linux_syscall_request halt_sr = {halt_sr33,584
+long wrapper_sys_halt(void)wrapper_sys_halt38,666
+long wrapper_sys_umount(const char *path, int flags)wrapper_sys_umount44,763
+ssize_t wrapper_sys_write(unsigned int fd, const char *buf, size_t count)wrapper_sys_write49,862
+long wrapper_sys_close(unsigned int fd)wrapper_sys_close54,984
+long wrapper_sys_unlink(const char *pathname)wrapper_sys_unlink59,1054
+long wrapper_sys_open(const char *filename, int flags, int mode)wrapper_sys_open64,1143
+long wrapper_sys_poll(struct pollfd *ufds, unsigned int nfds, long timeout)wrapper_sys_poll69,1268
+ssize_t wrapper_sys_read(unsigned int fd, char *buf, size_t count)wrapper_sys_read74,1396
+off_t wrapper_sys_lseek(unsigned int fd, off_t offset, unsigned int origin)wrapper_sys_lseek79,1510
+long wrapper_sys_rename(const char *oldname, const char *newname)wrapper_sys_rename84,1632
+long wrapper_sys_flock(unsigned int fd, unsigned int cmd)wrapper_sys_flock89,1755
+long wrapper_sys_newfstat(unsigned int fd, struct stat *statbuf)wrapper_sys_newfstat94,1848
+long wrapper_sys_chmod(const char *filename, mode_t mode)wrapper_sys_chmod99,1961
+long wrapper_sys_newlstat(char *filename, struct stat *statbuf)wrapper_sys_newlstat104,2067
+long wrapper_sys_mkdir(const char *pathname, int mode)wrapper_sys_mkdir109,2191
+long wrapper_sys_rmdir(const char *pathname)wrapper_sys_rmdir114,2294
+long wrapper_sys_getdents(unsigned int fd, struct linux_dirent *dirent, unsigned int count)wrapper_sys_getdents119,2381
+long wrapper_sys_newstat(char *filename, struct stat *statbuf)wrapper_sys_newstat124,2527
+long wrapper_sys_utimes(const char *filename, struct timeval *utimes)wrapper_sys_utimes129,2649
+long _wrapper_sys_mount(const char *dev, const char *mnt_point, const char *fs, int flags, void *data)_wrapper_sys_mount134,2775
+long wrapper_sys_chdir(const char *dir)wrapper_sys_chdir140,2962
+long wrapper_sys_mknod(const char *filename, int mode, unsigned dev)wrapper_sys_mknod146,3040
+long wrapper_sys_chroot(const char *dir)wrapper_sys_chroot152,3163
+static void get_fs_names(char *page)get_fs_names160,3281
+static int try_mount(char *fstype, char *devno_str, char *mnt, int flags, void *data)try_mount179,3725
+long wrapper_sys_mount(void *file, int devno, char *fstype, int ro)wrapper_sys_mount209,4269
+
+thread_wrapper.c,614
+static volatile apr_uint32_t number_of_threads = -1;number_of_threads4,53
+static apr_thread_mutex_t * all_threads_are_gone_mutex;all_threads_are_gone_mutex5,106
+apr_status_t wrapper_apr_thread_init(apr_pool_t * pool)wrapper_apr_thread_init7,163
+apr_status_t wrapper_apr_thread_create (apr_thread_t **new_thread, apr_threadattr_t *attr, apr_thread_start_t func, void *data, apr_pool_t *cont)wrapper_apr_thread_create23,548
+apr_status_t wrapper_apr_thread_exit (apr_thread_t *thd, apr_status_t retval)wrapper_apr_thread_exit34,894
+void wrapper_apr_thread_join_all(void)wrapper_apr_thread_join_all47,1247
+
+utils.c,424
+char* lfd_apr_strerror_thunsafe(apr_status_t rc)lfd_apr_strerror_thunsafe9,160
+void lfd_log(enum err_levels lvl, char * fmt, ...)lfd_log16,330
+void bug(const char* p_text)bug25,504
+apr_size_t lfd_ascii_bin_to_ascii(const char* p_in, char* p_out, apr_size_t in_len)lfd_ascii_bin_to_ascii32,574
+struct ascii_to_bin_ret lfd_ascii_ascii_to_bin(char* p_buf, apr_size_t in_len, int prev_cr)lfd_ascii_ascii_to_bin57,1133
+
+drivers/console.c,253
+static void console_write(struct console *con, const char *str, unsigned len)console_write7,125
+static struct console console = {console12,229
+static int __init console_init(void)console_init19,360
+late_initcall(console_init);console_init25,442
+
+drivers/disk.c,796
+struct lkl_disk_dev {lkl_disk_dev11,207
+	void *file;file12,229
+        spinlock_t lock;                /* For mutual exclusion */lock13,242
+        struct request_queue *queue;    /* The device request queue */queue14,309
+        struct gendisk *gd;             /* The gendisk structure */gd15,380
+static void lkl_disk_request(request_queue_t *q)lkl_disk_request18,452
+static int lkl_disk_open(struct inode *inode, struct file *filp)lkl_disk_open38,916
+static struct block_device_operations lkl_disk_ops = {lkl_disk_ops46,1091
+static int major;major52,1218
+static int which=0;which53,1236
+int lkl_disk_add_disk(void *file, dev_t *devno)lkl_disk_add_disk55,1257
+static int __init lkl_disk_init(void)lkl_disk_init96,2286
+late_initcall(lkl_disk_init);lkl_disk_init107,2479

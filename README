@@ -1,0 +1,40 @@
+A LUA and APR based LKL scriptable tester.
+
+
+Prerequisites:
+	a) APR library - The Apache Portable Runtime Library.
+		- a set of minimalistic C wrappers over system calls
+		  that permits writing portable and fast code in C.
+		- on Debian/Ubuntu just do [sudo] apt-get install libapr1-dev.
+		  You'll need to install the "-dev" package to get the header files.
+		  LKLFTPD (currently) looks for the headers in /usr/include/apr-1.0/;
+		  you may need to tweak this on your system.
+		- a 1.2.1 or better version will do just fine (but later versions
+		  have more bugfixes and better support for some platforms).
+	b) LUA 5.0
+
+	c) LKL - if you want to run LKLFTPD through LKL you'll obviously need LKL.
+		- check on http://ixlabs.cs.pub.ro/linux-kernel-library/ for details about LKL.
+
+Documentation:
+	a) APR - http://apr.apache.org/docs/apr/1.2/modules.html
+	b) LUA - http://www.lua.org
+	c) LKL - http://ixlabs.cs.pub.ro/linux-kernel-library/
+
+
+
+
+
+LKL:
+	To aid developement and o give the tester more functionality we have wrapped
+	  all file IO functions under lkl_file_t based operations.
+	These are by default mapped "1-1" to apr_file_t, but by defining LKL_FILE_APIS at
+	  compile time you can use lkl based file IO.
+	a) If LKL_FILE_APIS is NOT DEFINED (which means lkl_file_t is defined as apr_file_t)
+	     you will use the OS APIs to access files.
+	     No LKL code is run/called. You need not link to liblkl.
+	     In this mode you can use LKLFTPD as a standalone ftp server.
+	b) If LKL_FILE_APIS is DEFINED, lkl_file_t is implemented as a wrapper
+	     over LKL's sys_* functions. In this mode you'll need to link to LKL.
+	     You'll be bound to Linux' licence (currently GPLv2) by linking
+	     directly to Linux code.
