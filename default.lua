@@ -1,5 +1,20 @@
+
 print ("~~~~~~~~~~~~~~ begin lua code. Respect my authoritah!")
 filename = "default.lua"
-s,a  = stat(filename)
-print ("stat returned ", s, a)
-print ("~~~~~~~~~~~~~~ end lua code.") 
+
+a = apr.dir(".")
+t = {}
+print("before insert");
+for i in a do
+    table.insert(t,i)
+end
+print("before sort");
+table.sort(t)
+
+for i,v in ipairs(t) do
+    print (i,v)
+end
+
+a,b = lkl.get_pid()
+print ("a=", a, "b=", b)
+print ("~~~ end of the world")
