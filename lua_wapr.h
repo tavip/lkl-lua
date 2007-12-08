@@ -13,4 +13,4 @@
 #define chdir_error	strerror(errno)
 #endif
 
-int luaopen_wapr (lua_State *L);
+void luaopen_wapr (lua_State *L);

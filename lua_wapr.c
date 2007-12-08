@@ -605,9 +605,8 @@ static const struct luaL_reg fslib[] = {
 	{NULL, NULL},
 };
 
-int luaopen_wapr (lua_State *L) {
+void luaopen_wapr (lua_State *L) {
 	dir_create_meta (L);
 	luaL_register (L, "apr", fslib);
 	set_info (L);
-	return 1;
 }

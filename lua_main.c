@@ -76,72 +76,60 @@ static const struct luaL_reg fslib[] = {
 	{NULL, NULL},
 };
 
-static apr_status_t lua_wapr_register(lua_State * L, apr_pool_t * root_pool)
+static void lua_lkl_register(lua_State * L)
 {
-	gp = root_pool;
 	lua_register(L, "stat", luk_stat);
 	luaL_register (L, "lkl", fslib);
-	return APR_SUCCESS;
 }
-///=========================================================
 
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-///==============================================================
-
-static const luaL_reg lualibs[] =
+typedef void (*my_lua_registerer_t) (lua_State *L);
+static const my_lua_registerer_t lualibs[] = 
 {
-        { "base",       luaopen_base },
-        { "lkl",        lua_wapr_register},
-        { NULL,         NULL }
+        luaL_openlibs,
+        luaopen_wapr,
+        lua_lkl_register
 };
 
 /* A function to open up all the Lua libraries we've declared above. */
 static void openlualibs(lua_State *l)
 {
-        const luaL_reg *lib;
-
-        for (lib = lualibs; lib->func != NULL; lib++)
+        int i;
+        for(i = 0; i < sizeof(lualibs)/sizeof(my_lua_registerer_t); i++)
         {
-                lib->func(l);
-                lua_settop(l, 0);
+            lualibs[i](l);
+            lua_settop(l, 0);
         }
 }
 
-static void lua_run_script(lua_State*L, const char *filename) {
-	#if defined(LUA_VERSION_NUM) && LUA_VERSION_NUM >=501
-	(void)luaL_dofile(L, filename);
-	#else
-	(void)lua_dofile(L, filename);
-	#endif
+static void lua_run_script(lua_State*L, const char *filename) 
+{
+        int s = luaL_loadfile(L, filename);
+        if(0 == s)
+        {
+                s = lua_pcall(L, 0, LUA_MULTRET, 0);
+        }
+        if (0 != s)
+        {
+                fprintf(stderr, "LUA Error: %s\n", lua_tostring(L, -1));
+                lua_pop(L, 1); // remove error message
+        }
 }
 
 
 apr_status_t lua_lkl_main(const char * script_file, apr_pool_t * root_pool)
 {
+        gp = root_pool;
 	/* initialize Lua */
 	L = lua_open();
+        if(NULL == L)
+            return -1;
 
-	/* load Lua base libraries */
+	/* load Lua base libraries & our extensions */
 	openlualibs(L);
-
-	/* register our functions */
-        luaopen_wapr(L);
 
 	/* run the script */
 	lua_run_script(L, script_file);
