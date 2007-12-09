@@ -1,8 +1,10 @@
 
 print ("~~~~~~~~~~~~~~ begin lua code. Respect my authoritah!")
 filename = "default.lua"
+a,v = stat(filename)
+print (a,v)
+a = lkl.dir("/")
 
-a = apr.dir(".")
 t = {}
 print("before insert");
 for i in a do
