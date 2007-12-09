@@ -30,14 +30,8 @@ int luapr_stat(lua_State * L)
 	int rc;
 	apr_finfo_t finfo;
 
-        n = lua_gettop(L);
-	if(1 != n || !lua_isstring(L, 1))
-	{
-            lua_pushstring(L, "Expecting one string argument");
-	    lua_error(L);
-	}
+        fname = luaL_checkstring (L, 1);
 
-	fname = lua_tostring(L, 1);
 	rc = wapr_stat(&finfo, fname, APR_FINFO_SIZE|APR_FINFO_TYPE, gp);
 	if(APR_SUCCESS != rc)
 	{
