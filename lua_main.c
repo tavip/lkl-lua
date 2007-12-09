@@ -10,19 +10,30 @@
 #include "wapr_fileops.h"
 #include "wapr_user.h"
 
+#define DIR_METATABLE "APR directory metatable"
+
 /* the Lua interpreter */
 lua_State* L;
 apr_pool_t * gp;
-int luk_stat(lua_State * L)
+
+struct dir_data_t
 {
-	int n = lua_gettop(L);
+        apr_dir_t * d;
+	int  closed;
+};
+
+
+int luapr_stat(lua_State * L)
+{
+	int n;
 	const char * fname;
 	int rc;
 	apr_finfo_t finfo;
 
+        n = lua_gettop(L);
 	if(1 != n || !lua_isstring(L, 1))
 	{
-		lua_pushstring(L, "Expecting one string argument");
+            lua_pushstring(L, "Expecting one string argument");
 	    lua_error(L);
 	}
 
@@ -30,8 +41,8 @@ int luk_stat(lua_State * L)
 	rc = wapr_stat(&finfo, fname, APR_FINFO_SIZE|APR_FINFO_TYPE, gp);
 	if(APR_SUCCESS != rc)
 	{
-		lua_pushstring(L, "Error accessing file, error: ");
-		lua_pushstring(L, lfd_apr_strerror_thunsafe(rc));
+            lua_pushstring(L, "Error accessing file, error: ");
+            lua_pushstring(L, lfd_apr_strerror_thunsafe(rc));
 	    lua_error(L);
 	}
 	
@@ -43,7 +54,7 @@ int luk_stat(lua_State * L)
 	return 2;
 }
 
-int luk_get_pid(lua_State * L)
+int luapr_get_pid(lua_State * L)
 {
 	apr_status_t rc;
 	wapr_uid_t userid;
@@ -60,9 +71,98 @@ int luk_get_pid(lua_State * L)
 	return 2;
 }
 
+
+
+
+
+/**
+ * Directory iterator
+ */
+static int luapr_dir_iter (lua_State *L)
+{
+        apr_status_t rc;
+        apr_finfo_t finfo;
+	struct dir_data_t * sd;
+
+        sd = (struct dir_data_t*)lua_touserdata (L, lua_upvalueindex (1));
+
+	luaL_argcheck (L, !sd->closed, 1, "closed directory");
+
+        rc = apr_dir_read(&finfo, APR_FINFO_NAME, sd->d);
+        if(APR_SUCCESS == rc)
+        {
+                printf("%s\n", finfo.name);
+                lua_pushstring (L, finfo.name);
+                return 1;
+        }
+        else
+        {
+		/* no more entries => close directory */
+                sd->closed = 1;
+		apr_dir_close (sd->d);
+		return 0;
+	}
+}
+
+
+
+
+/**
+ * Factory of directory iterators
+ */
+static int luapr_dir_iter_factory (lua_State *L)
+{
+	const char *path;
+        apr_status_t rc;
+        struct dir_data_t * sd;
+
+	path = luaL_checkstring (L, 1);
+	sd = (struct dir_data_t*)lua_newuserdata (L, sizeof(struct dir_data_t *));
+	luaL_getmetatable (L, DIR_METATABLE);
+	lua_setmetatable (L, -2);
+
+        sd->closed = 0;
+	rc = apr_dir_open(&sd->d, path, gp);
+        if(APR_SUCCESS != rc)
+        {
+                sd->closed = 1;
+		luaL_error (L, "cannot open %s: %s", path, lfd_apr_strerror_thunsafe (rc));
+        }
+	lua_pushcclosure (L, luapr_dir_iter, 1);
+        return 1;
+}
+
+
+/**
+ * Closes directory iterators
+ */
+static int luapr_dir_close (lua_State *L)
+{
+	struct dir_data_t * sd = (struct dir_data_t*)lua_touserdata (L, 1);
+        if(!sd->closed)
+        {
+                apr_dir_close(sd->d);
+	}
+	return 0;
+}
+
+/**
+ * Creates directory metatable.
+ */
+static int dir_create_meta (lua_State *L) {
+	luaL_newmetatable (L, DIR_METATABLE);
+	/* set its __gc field */
+	lua_pushstring (L, "__gc");
+	lua_pushcfunction (L, luapr_dir_close);
+	lua_settable (L, -3);
+	return 1;
+}
+
 static const struct luaL_reg fslib[] = {
 	//{"attributes", file_info},
-	{"get_pid", luk_get_pid},
+	{"get_pid",      luapr_get_pid             },
+        {"stat",         luapr_stat                },
+        {"dir",          luapr_dir_iter_factory    },
 /*
 	{"chdir", change_dir},
 	{"currentdir", get_dir},
@@ -78,7 +178,8 @@ static const struct luaL_reg fslib[] = {
 
 static void lua_lkl_register(lua_State * L)
 {
-	lua_register(L, "stat", luk_stat);
+	lua_register(L, "stat", luapr_stat);
+        dir_create_meta(L);
 	luaL_register (L, "lkl", fslib);
 }
 
