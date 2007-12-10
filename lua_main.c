@@ -23,16 +23,187 @@ struct dir_data_t
 };
 
 
+static const int stat_field_options[] = 
+{
+    APR_FINFO_LINK   ,
+    APR_FINFO_MTIME  ,
+    APR_FINFO_CTIME  ,
+    APR_FINFO_ATIME  ,
+    APR_FINFO_SIZE   ,
+    APR_FINFO_CSIZE  ,
+    APR_FINFO_DEV    ,
+    APR_FINFO_INODE  ,
+    APR_FINFO_NLINK  ,
+    APR_FINFO_TYPE   ,
+    APR_FINFO_USER   ,
+    APR_FINFO_GROUP  ,
+    APR_FINFO_UPROT  ,
+    APR_FINFO_GPROT  ,
+    APR_FINFO_WPROT  ,
+    APR_FINFO_ICASE  ,
+    APR_FINFO_NAME   ,
+    APR_FINFO_MIN    ,
+    APR_FINFO_IDENT  ,
+    APR_FINFO_OWNER  ,
+    APR_FINFO_PROT   ,
+    APR_FINFO_NORM   ,
+    APR_FINFO_DIRENT 
+};
+
+static const char* stat_string_options[] = 
+{
+    "link"   ,
+    "mtime"  ,
+    "ctime"  ,
+    "atime"  ,
+    "size"   ,
+    "csize"  ,
+    "dev"    ,
+    "inode"  ,
+    "nlink"  ,
+    "type"   ,
+    "user"   ,
+    "group"  ,
+    "uprot"  ,
+    "gprot"  ,
+    "wprot"  ,
+    "icase"  ,
+    "name"   ,
+    "min"    ,
+    "ident"  ,
+    "owner"  ,
+    "prot"   ,
+    "norm"   ,
+    "dirent" 
+};
+
+typedef int (*Selector)(lua_State *L, int i, const void *data);
+
+static int doselection(lua_State *L, int i, const char *const S[], Selector F, const void *data)
+{
+	if (lua_isnone(L, i))
+	{
+		lua_newtable(L);
+		for (i=0; S[i]!=NULL; i++)
+		{
+			lua_pushstring(L, S[i]);
+			F(L, i, data);
+			lua_settable(L, -3);
+		}
+		return 1;
+	}
+	else
+	{
+		int j = luaL_checkoption(L, i, NULL, S);
+		if (j==-1) luaL_argerror(L, i, "unknown selector");
+		return F(L, j, data);
+	}
+}
+
+static apr_int32_t string_modes_to_int32(lua_State*L, int start_arg)
+{
+    apr_int32_t ret = 0;
+    int i, j, n;
+    n = lua_gettop(L);
+    for(i = start_arg; i <= n; i++)
+    {
+    	j = luaL_checkoption(L, i, NULL, stat_string_options);
+        if(-1 == j)
+        {
+            luaL_argerror(L, i, "unknown selector");
+            return 0;
+        }
+        else
+        {
+            ret |= stat_field_options[j];
+        }
+    }
+    return ret;
+}
+
+
+static const char * apr_file_type_to_string(apr_filetype_e filetype)
+{
+    switch(filetype)
+    {
+        case APR_NOFILE: return "nofile";
+        case APR_REG: 	 return "regular";
+        case APR_DIR: 	 return "directory";
+        case APR_CHR: 	 return "character";
+        case APR_BLK: 	 return "block";
+        case APR_PIPE:   return "pipe";
+        case APR_LNK: 	 return "symbolic";
+        case APR_SOCK: 	 return "socket";
+        default:
+        case APR_UNKFILE:return "unknown";
+    }
+}
+
+static void apr_finfo_number_to_field(lua_State*L, int fieldno, apr_finfo_t*finfo)
+{
+    switch(fieldno)
+    {
+        //case 0: LINK, nothing to do
+        case 1: lua_pushnumber(L, finfo->mtime); break;
+        case 2: lua_pushnumber(L, finfo->ctime); break;
+        case 3: lua_pushnumber(L, finfo->atime); break;
+
+        case 4: lua_pushnumber(L, finfo->size); break;
+        case 5: lua_pushnumber(L, finfo->csize); break;
+
+        case 6: lua_pushnumber(L, finfo->device); break;
+        case 7: lua_pushnumber(L, finfo->inode); break;
+        case 8: lua_pushnumber(L, finfo->nlink); break;
+        case 9: lua_pushstring(L, apr_file_type_to_string(finfo->filetype)); break;
+        case 10:lua_pushnumber(L, finfo->user); break;
+        case 11:lua_pushnumber(L, finfo->group); break;
+        case 12:lua_pushnumber(L, finfo->protection); break;//TODO:
+        case 13:lua_pushnumber(L, finfo->protection); break;//TODO:
+        case 14:lua_pushnumber(L, finfo->protection); break;//TODO:
+        //case 15: nothing to output
+        case 16:lua_pushstring(L, finfo->name); break;
+        //case 17: MIN:combination of other fields,
+        //case 18: IDENT: inode and dev
+        //case 19: OWNER: user&group
+        //case 20: PROT: done by userp, groupp, otherp
+        //case 21: norm
+        //case 22: dirent
+    }
+}
+static apr_int32_t finfo_to_lua_results(lua_State*L, int start_arg, apr_finfo_t * finfo)
+{
+    apr_int32_t ret = 0;
+    int i, j, n;
+    n = lua_gettop(L);
+    for(i = start_arg; i <= n; i++)
+    {
+    	j = luaL_checkoption(L, i, NULL, stat_string_options);
+        if(-1 == j)
+        {
+            luaL_argerror(L, i, "unknown selector");
+            return 0;
+        }
+        else
+        {
+            apr_finfo_number_to_field(L, j, finfo);
+        }
+    }
+    return ret;
+}
 int luapr_stat(lua_State * L)
 {
-	int n;
 	const char * fname;
-	int rc;
+	apr_status_t rc;
 	apr_finfo_t finfo;
-
+        apr_int32_t wanted;
         fname = luaL_checkstring (L, 1);
-
-	rc = wapr_stat(&finfo, fname, APR_FINFO_SIZE|APR_FINFO_TYPE, gp);
+        wanted = string_modes_to_int32(L, 2);
+	rc = wapr_stat(&finfo, fname, wanted, gp);
+        if(APR_EINCOMPLETE == rc)
+        {
+            lua_pushnil(L);
+            return 1;
+        }
 	if(APR_SUCCESS != rc)
 	{
             lua_pushstring(L, "Error accessing file, error: ");
@@ -40,11 +211,7 @@ int luapr_stat(lua_State * L)
 	    lua_error(L);
 	}
 	
-	//lua_pushnumber(L, finfo.inode);
-	lua_pushnumber(L, finfo.filetype);
-	lua_pushnumber(L, finfo.size);
-	//lua_pushstring(L, finfo.name);
-	//lua_pushstring(L, finfo.fname);
+	finfo_to_lua_results(L, 2, &finfo);
 	return 2;
 }
 
@@ -85,7 +252,6 @@ static int luapr_dir_iter (lua_State *L)
         rc = apr_dir_read(&finfo, APR_FINFO_NAME, sd->d);
         if(APR_SUCCESS == rc)
         {
-                printf("%s\n", finfo.name);
                 lua_pushstring (L, finfo.name);
                 return 1;
         }
@@ -120,7 +286,7 @@ static int luapr_dir_iter_factory (lua_State *L)
         if(APR_SUCCESS != rc)
         {
                 sd->closed = 1;
-		luaL_error (L, "cannot open %s: %s", path, lfd_apr_strerror_thunsafe (rc));
+                return 0;
         }
 	lua_pushcclosure (L, luapr_dir_iter, 1);
         return 1;
@@ -135,6 +301,7 @@ static int luapr_dir_close (lua_State *L)
 	struct dir_data_t * sd = (struct dir_data_t*)lua_touserdata (L, 1);
         if(!sd->closed)
         {
+                sd->closed = 1;
                 apr_dir_close(sd->d);
 	}
 	return 0;
