@@ -324,11 +324,45 @@ static int dir_create_meta (lua_State *L) {
 	return 1;
 }
 
+static int luapr_file_rename(lua_State * L)
+{
+    apr_status_t rc;
+    const char * source, * dest;
+    source = luaL_checkstring(L, 1);
+    dest = luaL_checkstring(L, 2);
+    rc = wapr_file_rename(source, dest, gp);
+    if(APR_SUCCESS != rc)
+    {
+	printf("wapr_file_rename in luapr_file_rename failed with %d, %s\n", rc, lfd_apr_strerror_thunsafe(rc));
+	printf("wapr_file_rename failed for [%s] -> [%s]\n", source, dest);
+    }
+    lua_pushnumber(L, rc);
+    return 1;
+}
+
+static int luapr_file_copy(lua_State * L)
+{
+    apr_status_t rc;
+    const char * source, * dest;
+    source = luaL_checkstring(L, 1);
+    dest = luaL_checkstring(L, 2);
+    rc = wapr_file_copy(source, dest, APR_OS_DEFAULT, gp);
+    if(APR_SUCCESS != rc)
+    {
+        printf("wapr_file_copy in luapr_file_copy failed with %d, %s\n", rc, lfd_apr_strerror_thunsafe(rc));
+        printf("wapr_file_copy failed for [%s] -> [%s]\n", source, dest);
+    }
+    lua_pushnumber(L, rc);
+    return 1;
+}
+
 static const struct luaL_reg fslib[] = {
 	//{"attributes", file_info},
 	{"get_pid",      luapr_get_pid             },
         {"stat",         luapr_stat                },
         {"dir",          luapr_dir_iter_factory    },
+	{"file_rename",  luapr_file_rename         },
+	{"file_copy",    luapr_file_copy           },
 /*
 	{"chdir", change_dir},
 	{"currentdir", get_dir},
