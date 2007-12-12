@@ -174,25 +174,26 @@ static void apr_finfo_number_to_field(lua_State*L, int fieldno, apr_finfo_t*finf
 }
 static apr_int32_t finfo_to_lua_results(lua_State*L, int start_arg, apr_finfo_t * finfo)
 {
-    int i, j, n;
-    n = lua_gettop(L);
+    int i, mask;
+    const int stat_field_options_size = sizeof(stat_field_options)/sizeof(stat_field_options[0]);
     lua_newtable(L);
-
-    for(i = start_arg; i <= n; i++)
+    for(mask = 1; mask != 0; mask <<= 1)
     {
-    	j = luaL_checkoption(L, i, NULL, stat_string_options);
-        if(-1 == j)
-        {
-            luaL_argerror(L, i, "unknown selector");
-            return 0;
-        }
-        else
-        {
-            if(stat_field_options[j]&finfo->valid)
-                apr_finfo_number_to_field(L, j, finfo, -3);
-        }
+	if(finfo->valid & mask)
+	{
+	    for(i = 0; i < stat_field_options_size; i++)
+	    {
+		if(mask == stat_field_options[i])
+		{
+		    break;
+		}
+	    }
+	    if(i != stat_field_options_size)
+	    {
+		apr_finfo_number_to_field(L, i, finfo, -3);
+	    }
+	}
     }
-    
     return 1;
 }
 
@@ -204,13 +205,12 @@ int luapr_stat(lua_State * L)
         apr_int32_t wanted;
         fname = luaL_checkstring (L, 1);
         wanted = string_modes_to_int32(L, 2);
+	if(0 == wanted)
+	{
+	    wanted = -1;
+	}
 	rc = wapr_stat(&finfo, fname, wanted, gp);
-        if(APR_EINCOMPLETE == rc)
-        {
-            lua_pushnil(L);
-            return 1;
-        }
-	if(APR_SUCCESS != rc)
+	if(APR_SUCCESS != rc && APR_INCOMPLETE != rc)
 	{
             lua_pushstring(L, "Error accessing file, error: ");
             lua_pushstring(L, lfd_apr_strerror_thunsafe(rc));
