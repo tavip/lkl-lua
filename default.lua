@@ -10,12 +10,20 @@ print ("after printing the table")
 
 ret = lkl.file_rename(pwd .. "test1", pwd .. "test2")
 print("file_rename returned", ret)
+
 ret = lkl.file_rename(pwd .. "test2", pwd .. "test1");
 print("file_rename returned", ret)
+
 ret = lkl.file_copy("test1", "copydest");
 print("file_copy returned", ret)
+
 ret = lkl.dir_make("subdir");
 print("dir_make returned", ret)
+
+ret = lkl.dir_make_rec("subdir2/subdir3");
+print("dir_make_rec returned", ret)
+
+
 a = lkl.dir(1)
 if a == nil then
     print "suck to be a nilval"

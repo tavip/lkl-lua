@@ -45,6 +45,7 @@
 #define wapr_stat		apr_stat
 
 #define wapr_dir_make		apr_dir_make
+#define wapr_dir_make_recursive apr_dir_make_recursive
 #define wapr_dir_remove		apr_dir_remove
 #define wapr_dir_open		apr_dir_open
 #define wapr_dir_close		apr_dir_close
@@ -542,6 +543,16 @@ apr_status_t wapr_dir_close(wapr_dir_t * thedir);
 apr_status_t wapr_dir_make(const char *path, apr_fileperms_t perm,
                           apr_pool_t *pool);
 
+
+/** Creates a new directory on the file system, but behaves like
+ * 'mkdir -p'. Creates intermediate directories as required. No error
+ * will be reported if PATH already exists.
+ * @param path the path for the directory to be created. (use / on all systems)
+ * @param perm Permissions for the new direcoty.
+ * @param pool the pool to use.
+ */
+apr_status_t apr_dir_make_recursive(const char *path, apr_fileperms_t perm,
+                                           apr_pool_t *pool) 
 /**
 * Remove directory from the file system.
 * @param path 	the path for the directory to be removed. (use / on all systems)
