@@ -25,11 +25,13 @@ static const char *script_name="default.lua";
 static const char *disk_image="disk";
 static const char *fs_type;
 static int ro=0;
+
+#ifdef LKL_FILE_APIS
 static dev_t devno;
 static apr_file_t *disk_file;
 static int init_err;
 
-#ifdef LKL_FILE_APIS
+
 
 apr_thread_mutex_t *wait_init;
 
