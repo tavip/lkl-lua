@@ -1,8 +1,14 @@
 
 print ("~~~~~~~~~~~~~~ begin lua code. Respect my authoritah!")
 filename = "default.lua"
-a,v = stat(filename, "type", "size")
-print (a,v)
+a = lkl.stat(filename, "size", "type")
+print (a["size"])
+for i,v in pairs(a) do
+    print (i,v)
+end
+print ("after printing the table")
+
+
 a = lkl.dir(1)
 if a == nil then
     print "suck to be a nilval"
