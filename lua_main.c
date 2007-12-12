@@ -139,29 +139,31 @@ static const char * apr_file_type_to_string(apr_filetype_e filetype)
     }
 }
 
-static void apr_finfo_number_to_field(lua_State*L, int fieldno, apr_finfo_t*finfo)
+static void apr_finfo_number_to_field(lua_State*L, int fieldno, apr_finfo_t*finfo, int table_pos)
 {
+
     switch(fieldno)
     {
         //case 0: LINK, nothing to do
-        case 1: lua_pushnumber(L, finfo->mtime); break;
-        case 2: lua_pushnumber(L, finfo->ctime); break;
-        case 3: lua_pushnumber(L, finfo->atime); break;
+        case 1: lua_pushstring(L, stat_string_options[fieldno]);    lua_pushnumber(L, finfo->mtime); lua_rawset(L, table_pos);    break;
+        case 2: lua_pushstring(L, stat_string_options[fieldno]);    lua_pushnumber(L, finfo->ctime); lua_rawset(L, table_pos);    break;
+        case 3: lua_pushstring(L, stat_string_options[fieldno]);    lua_pushnumber(L, finfo->atime); lua_rawset(L, table_pos);    break;
 
-        case 4: lua_pushnumber(L, finfo->size); break;
-        case 5: lua_pushnumber(L, finfo->csize); break;
+        case 4: lua_pushstring(L, stat_string_options[fieldno]);    lua_pushnumber(L, finfo->size);  lua_rawset(L, table_pos);    break;
+        case 5: lua_pushstring(L, stat_string_options[fieldno]);    lua_pushnumber(L, finfo->csize); lua_rawset(L, table_pos);    break;
 
-        case 6: lua_pushnumber(L, finfo->device); break;
-        case 7: lua_pushnumber(L, finfo->inode); break;
-        case 8: lua_pushnumber(L, finfo->nlink); break;
-        case 9: lua_pushstring(L, apr_file_type_to_string(finfo->filetype)); break;
-        case 10:lua_pushnumber(L, finfo->user); break;
-        case 11:lua_pushnumber(L, finfo->group); break;
-        case 12:lua_pushnumber(L, finfo->protection); break;//TODO:
-        case 13:lua_pushnumber(L, finfo->protection); break;//TODO:
-        case 14:lua_pushnumber(L, finfo->protection); break;//TODO:
-        //case 15: nothing to output
-        case 16:lua_pushstring(L, finfo->name); break;
+        case 6: lua_pushstring(L, stat_string_options[fieldno]);    lua_pushnumber(L, finfo->device);lua_rawset(L, table_pos);    break;
+        case 7: lua_pushstring(L, stat_string_options[fieldno]);    lua_pushnumber(L, finfo->inode); lua_rawset(L, table_pos);    break;
+        case 8: lua_pushstring(L, stat_string_options[fieldno]);    lua_pushnumber(L, finfo->nlink); lua_rawset(L, table_pos);    break;
+        case 9: lua_pushstring(L, stat_string_options[fieldno]);    lua_pushstring(L, apr_file_type_to_string(finfo->filetype));
+                lua_rawset(L, table_pos);    break;
+        case 10:lua_pushstring(L, stat_string_options[fieldno]);    lua_pushnumber(L, finfo->user);  lua_rawset(L, table_pos);    break;
+        case 11:lua_pushstring(L, stat_string_options[fieldno]);    lua_pushnumber(L, finfo->group); lua_rawset(L, table_pos);    break;
+        case 12:lua_pushstring(L, stat_string_options[fieldno]);    lua_pushnumber(L, finfo->protection); lua_rawset(L, table_pos);    break;//TODO:
+        case 13:lua_pushstring(L, stat_string_options[fieldno]);    lua_pushnumber(L, finfo->protection); lua_rawset(L, table_pos);    break;//TODO:
+        case 14:lua_pushstring(L, stat_string_options[fieldno]);    lua_pushnumber(L, finfo->protection); lua_rawset(L, table_pos);    break;//TODO:
+        //case 15:     nothing to output
+        case 16:lua_pushstring(L, stat_string_options[fieldno]);    lua_pushstring(L, finfo->name); lua_rawset(L, table_pos);    break;
         //case 17: MIN:combination of other fields,
         //case 18: IDENT: inode and dev
         //case 19: OWNER: user&group
@@ -172,9 +174,10 @@ static void apr_finfo_number_to_field(lua_State*L, int fieldno, apr_finfo_t*finf
 }
 static apr_int32_t finfo_to_lua_results(lua_State*L, int start_arg, apr_finfo_t * finfo)
 {
-    apr_int32_t ret = 0;
     int i, j, n;
     n = lua_gettop(L);
+    lua_newtable(L);
+
     for(i = start_arg; i <= n; i++)
     {
     	j = luaL_checkoption(L, i, NULL, stat_string_options);
@@ -185,11 +188,14 @@ static apr_int32_t finfo_to_lua_results(lua_State*L, int start_arg, apr_finfo_t 
         }
         else
         {
-            apr_finfo_number_to_field(L, j, finfo);
+            if(stat_field_options[j]&finfo->valid)
+                apr_finfo_number_to_field(L, j, finfo, -3);
         }
     }
-    return ret;
+    
+    return 1;
 }
+
 int luapr_stat(lua_State * L)
 {
 	const char * fname;
@@ -211,8 +217,7 @@ int luapr_stat(lua_State * L)
 	    lua_error(L);
 	}
 	
-	finfo_to_lua_results(L, 2, &finfo);
-	return 2;
+	return finfo_to_lua_results(L, 2, &finfo);
 }
 
 int luapr_get_pid(lua_State * L)
@@ -277,7 +282,7 @@ static int luapr_dir_iter_factory (lua_State *L)
         struct dir_data_t * sd;
 
 	path = luaL_checkstring (L, 1);
-	sd = (struct dir_data_t*)lua_newuserdata (L, sizeof(struct dir_data_t *));
+	sd = (struct dir_data_t*)lua_newuserdata (L, sizeof(struct dir_data_t));
 	luaL_getmetatable (L, DIR_METATABLE);
 	lua_setmetatable (L, -2);
 
