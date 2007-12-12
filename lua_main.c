@@ -346,6 +346,7 @@ static int luapr_file_copy(lua_State * L)
     const char * source, * dest;
     source = luaL_checkstring(L, 1);
     dest = luaL_checkstring(L, 2);
+    //TODO: get user set permissions from the LUA state
     rc = wapr_file_copy(source, dest, APR_OS_DEFAULT, gp);
     if(APR_SUCCESS != rc)
     {
@@ -356,6 +357,20 @@ static int luapr_file_copy(lua_State * L)
     return 1;
 }
 
+static int luapr_dir_make(lua_State * L)
+{
+    apr_status_t rc;
+    const char * path;
+    path = luaL_checkstring(L, 1);
+    rc = wapr_dir_make(path, APR_OS_DEFAULT, gp);
+    if(APR_SUCCESS != rc)
+    {
+        printf("wapr_dir_make in luapr_dir_make failed with %d, %s\n", rc, lfd_apr_strerror_thunsafe(rc));
+        printf("wapr_dir_make failed for [%s]\n", path);
+    }
+    lua_pushnumber(L, rc);
+    return 1;
+}
 static const struct luaL_reg fslib[] = {
 	//{"attributes", file_info},
 	{"get_pid",      luapr_get_pid             },
@@ -363,6 +378,7 @@ static const struct luaL_reg fslib[] = {
         {"dir",          luapr_dir_iter_factory    },
 	{"file_rename",  luapr_file_rename         },
 	{"file_copy",    luapr_file_copy           },
+	{"dir_make",     luapr_dir_make            },
 /*
 	{"chdir", change_dir},
 	{"currentdir", get_dir},
