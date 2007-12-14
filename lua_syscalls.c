@@ -7,6 +7,7 @@
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <utime.h>
 
 
 int lusys_change_dir (lua_State *L)
@@ -88,3 +89,33 @@ int lusys_rmdir (lua_State *L)
 	lua_pushboolean (L, 1);
 	return 1;
 }
+
+/*
+** Set access time and modification values for file
+*/
+int lusys_utime (lua_State *L) 
+{
+	const char *file = luaL_checkstring (L, 1);
+	struct utimbuf utb, *buf;
+        apr_status_t rc;
+
+	if (lua_gettop (L) == 1) /* set to current date/time */
+		buf = NULL;
+	else 
+        {
+		utb.actime = (time_t)luaL_optnumber (L, 2, 0);
+		utb.modtime = (time_t)luaL_optnumber (L, 3, utb.actime);
+		buf = &utb;
+	}
+        rc = wrapper_sys_utime (file, buf); 
+	if (0 != rc)
+        {
+		lua_pushnil (L);
+		lua_pushfstring (L, "%s", strerror (- rc));
+		return 2;
+	}
+	lua_pushboolean (L, 1);
+	return 1;
+}
+
+

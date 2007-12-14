@@ -7,6 +7,8 @@
 struct pollfd;
 struct stat;
 struct linux_dirent;
+struct utimbuf;
+
 long wrapper_sys_sync(void);
 long wrapper_sys_mount(void *disk, int devno, char *fstype, int ro);
 long wrapper_sys_halt();
@@ -27,6 +29,7 @@ long wrapper_sys_rmdir(const char *pathname);
 long wrapper_sys_getdents(unsigned int fd, struct linux_dirent *dirent, unsigned int count);
 long wrapper_sys_newstat(char *filename, struct stat *statbuf);
 long wrapper_sys_utimes(const char *filename, struct timeval *utimes);
+long wrapper_sys_utime(const char *filename, const struct utimbuf *buf);
 long wrapper_sys_umount(const char *path, int flags);
 long wrapper_sys_getgid(void);
 long wrapper_sys_getuid(void);

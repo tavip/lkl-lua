@@ -23,6 +23,7 @@
 	syscall_exit(); \
 	return sr.ret; \
 
+struct utimbuf;
 
 
 long wrapper_sys_sync(void)
@@ -129,6 +130,11 @@ long wrapper_sys_newstat(char *filename, struct stat *statbuf)
 long wrapper_sys_utimes(const char *filename, struct timeval *utimes)
 {
 	SYSCALL_REQ(utime, (long)filename, (long)utimes);
+}
+
+long wrapper_sys_utime(const char *filename, const struct utimbuf *buf)
+{
+        SYSCALL_REQ(utime, (long)filename, (long)buf);
 }
 
 long _wrapper_sys_mount(const char *dev, const char *mnt_point, const char *fs, int flags, void *data)

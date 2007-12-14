@@ -51,4 +51,7 @@ print ("lkl.mkdir returned ", ret)
 ret = lkl.rmdir("lklmkdir")
 print ("lkl.rmdir returned ", ret)
 
+
+ret, str = lkl.utime(filename, 0, 0)
+print("lkl.utime returned ", ret, str)
 print ("~~~ end of the world")
