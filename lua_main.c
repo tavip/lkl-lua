@@ -9,6 +9,7 @@
 
 #include "wapr_fileops.h"
 #include "wapr_user.h"
+#include "lua_syscalls.h"
 
 #define DIR_METATABLE "APR directory metatable"
 
@@ -377,6 +378,9 @@ static const struct luaL_reg fslib[] = {
 	{"file_copy",    luapr_file_copy           },
 	{"dir_make",     luapr_dir_make            },
 	{"dir_make_rec", luapr_dir_make_recursive  },
+        {"chdir",        lusys_change_dir          },
+        {"getcwd",       lusys_get_dir             },
+        {"mkdir",        lusys_mkdir               },
 /*
 	{"chdir", change_dir},
 	{"currentdir", get_dir},

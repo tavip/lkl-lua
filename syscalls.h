@@ -30,5 +30,7 @@ long wrapper_sys_utimes(const char *filename, struct timeval *utimes);
 long wrapper_sys_umount(const char *path, int flags);
 long wrapper_sys_getgid(void);
 long wrapper_sys_getuid(void);
-
+long wrapper_sys_chdir(const char *dir);
+long wrapper_sys_getcwd(char *buf, unsigned long size);
+long wrapper_sys_umask(mode_t size);
 #endif 

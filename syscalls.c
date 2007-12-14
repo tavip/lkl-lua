@@ -143,6 +143,12 @@ long wrapper_sys_chdir(const char *dir)
 }
 
 
+long wrapper_sys_getcwd(char *buf, unsigned long size)
+{
+	SYSCALL_REQ(getcwd, (long)buf, (long) size);
+}
+
+
 long wrapper_sys_mknod(const char *filename, int mode, unsigned dev)
 {
 	SYSCALL_REQ(mknod, (long)filename, mode, dev);
@@ -238,12 +244,21 @@ out_error:
 	return -1;
 }
 
+
 long wrapper_sys_getgid(void)
 {
 	SYSCALL_REQ(getgid);
 }
 
+
 long wrapper_sys_getuid(void)
 {
 	SYSCALL_REQ(getuid);
 }
+
+
+long wrapper_sys_umask(mode_t size)
+{
+        SYSCALL_REQ(umask, (long)size);
+}
+

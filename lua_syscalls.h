@@ -1,0 +1,10 @@
+#ifndef LUA_SYSCALLS_HH__
+#define LUA_SYSCALLS_HH__
+
+#include "lua.h"
+
+
+int lusys_change_dir (lua_State *L);
+int lusys_get_dir (lua_State *L);
+int lusys_mkdir (lua_State *L);
+#endif//LUA_SYSCALLS_HH__

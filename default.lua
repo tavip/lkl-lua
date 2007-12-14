@@ -1,4 +1,4 @@
-pwd = "/home/gringo/ix/lualkl/"
+pwd = "/"
 print ("~~~~~~~~~~~~~~ begin lua code. Respect my authoritah!")
 filename = "default.lua"
 a = lkl.stat(filename)
@@ -24,7 +24,7 @@ ret = lkl.dir_make_rec("subdir2/subdir3");
 print("dir_make_rec returned", ret)
 
 
-a = lkl.dir(1)
+a = lkl.dir(".")
 if a == nil then
     print "suck to be a nilval"
 else
@@ -42,4 +42,10 @@ else
 end
 a,b = lkl.get_pid()
 print ("a=", a, "b=", b)
+ret = lkl.chdir("/")
+print ("chdir returned ", ret)
+ret, reason = lkl.getcwd()
+print ("getcwd returned ", ret, reason)
+ret = lkl.mkdir("lklmkdir")
+print ("lkl.mkdir returned ", ret)
 print ("~~~ end of the world")
