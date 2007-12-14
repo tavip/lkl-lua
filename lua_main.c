@@ -381,6 +381,7 @@ static const struct luaL_reg fslib[] = {
         {"chdir",        lusys_change_dir          },
         {"getcwd",       lusys_get_dir             },
         {"mkdir",        lusys_mkdir               },
+        {"rmdir",        lusys_rmdir               },
 /*
 	{"chdir", change_dir},
 	{"currentdir", get_dir},

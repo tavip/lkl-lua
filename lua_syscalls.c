@@ -71,3 +71,20 @@ int lusys_mkdir (lua_State *L)
 	lua_pushboolean (L, 1);
 	return 1;
 }
+
+int lusys_rmdir (lua_State *L)
+{
+	const char *path = luaL_checkstring (L, 1);
+	int fail;
+
+	fail =  wrapper_sys_rmdir (path);
+
+	if (fail) {
+		lua_pushnil (L);
+                lua_pushfstring (L, "%s", lfd_apr_strerror_thunsafe(fail));
+		return 2;
+	}
+
+	lua_pushboolean (L, 1);
+	return 1;
+}

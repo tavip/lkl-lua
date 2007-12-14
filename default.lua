@@ -48,4 +48,7 @@ ret, reason = lkl.getcwd()
 print ("getcwd returned ", ret, reason)
 ret = lkl.mkdir("lklmkdir")
 print ("lkl.mkdir returned ", ret)
+ret = lkl.rmdir("lklmkdir")
+print ("lkl.rmdir returned ", ret)
+
 print ("~~~ end of the world")
