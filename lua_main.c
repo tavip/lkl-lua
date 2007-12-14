@@ -77,28 +77,7 @@ static const char* stat_string_options[] =
     "dirent" 
 };
 
-typedef int (*Selector)(lua_State *L, int i, const void *data);
 
-static int doselection(lua_State *L, int i, const char *const S[], Selector F, const void *data)
-{
-	if (lua_isnone(L, i))
-	{
-		lua_newtable(L);
-		for (i=0; S[i]!=NULL; i++)
-		{
-			lua_pushstring(L, S[i]);
-			F(L, i, data);
-			lua_settable(L, -3);
-		}
-		return 1;
-	}
-	else
-	{
-		int j = luaL_checkoption(L, i, NULL, S);
-		if (j==-1) luaL_argerror(L, i, "unknown selector");
-		return F(L, j, data);
-	}
-}
 
 static apr_int32_t string_modes_to_int32(lua_State*L, int start_arg)
 {
