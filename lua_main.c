@@ -18,7 +18,7 @@ apr_pool_t * gp;
 
 struct dir_data_t
 {
-        apr_dir_t * d;
+        wapr_dir_t * d;
 	int  closed;
 };
 
@@ -254,7 +254,7 @@ static int luapr_dir_iter (lua_State *L)
 
 	luaL_argcheck (L, !sd->closed, 1, "closed directory");
 
-        rc = apr_dir_read(&finfo, APR_FINFO_NAME, sd->d);
+        rc = wapr_dir_read(&finfo, APR_FINFO_NAME, sd->d);
         if(APR_SUCCESS == rc)
         {
                 lua_pushstring (L, finfo.name);
@@ -264,7 +264,7 @@ static int luapr_dir_iter (lua_State *L)
         {
 		/* no more entries => close directory */
                 sd->closed = 1;
-		apr_dir_close (sd->d);
+		wapr_dir_close (sd->d);
 		return 0;
 	}
 }
@@ -287,7 +287,7 @@ static int luapr_dir_iter_factory (lua_State *L)
 	lua_setmetatable (L, -2);
 
         sd->closed = 0;
-	rc = apr_dir_open(&sd->d, path, gp);
+	rc = wapr_dir_open(&sd->d, path, gp);
         if(APR_SUCCESS != rc)
         {
                 sd->closed = 1;
@@ -307,7 +307,7 @@ static int luapr_dir_close (lua_State *L)
         if(!sd->closed)
         {
                 sd->closed = 1;
-                apr_dir_close(sd->d);
+                wapr_dir_close(sd->d);
 	}
 	return 0;
 }

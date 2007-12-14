@@ -551,8 +551,8 @@ apr_status_t wapr_dir_make(const char *path, apr_fileperms_t perm,
  * @param perm Permissions for the new direcoty.
  * @param pool the pool to use.
  */
-apr_status_t apr_dir_make_recursive(const char *path, apr_fileperms_t perm,
-                                           apr_pool_t *pool) 
+apr_status_t wapr_dir_make_recursive(const char *path, apr_fileperms_t perm,
+                                           apr_pool_t *pool);
 /**
 * Remove directory from the file system.
 * @param path 	the path for the directory to be removed. (use / on all systems)
