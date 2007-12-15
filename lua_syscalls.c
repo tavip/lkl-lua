@@ -119,3 +119,33 @@ int lusys_utime (lua_State *L)
 }
 
 
+
+/*
+** Set access time and modification values for file
+*/
+int lusys_utimes (lua_State *L) 
+{
+	const char *file = luaL_checkstring (L, 1);
+	struct timeval utb, *buf;
+        apr_status_t rc;
+
+	if (lua_gettop (L) == 1) /* set to current date/time */
+		buf = NULL;
+	else 
+        {
+		utb.tv_sec = (long)luaL_optnumber (L, 2, 0);
+		utb.tv_usec = (long)luaL_optnumber (L, 3, 0);
+		buf = &utb;
+	}
+        rc = wrapper_sys_utimes (file, buf); 
+	if (0 != rc)
+        {
+		lua_pushnil (L);
+		lua_pushfstring (L, "%s", strerror (- rc));
+		return 2;
+	}
+	lua_pushboolean (L, 1);
+	return 1;
+}
+
+
