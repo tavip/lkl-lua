@@ -1,0 +1,8 @@
+*~
+*.o
+include/
+disk
+daemon.out
+lkl
+.deps
+include

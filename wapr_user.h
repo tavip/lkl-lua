@@ -25,17 +25,18 @@
 #include <apr_errno.h>
 #include <apr_pools.h>
 
+#include <asm/lkl.h>
 
 /**
  * Structure for determining user ownership.
  */
 
-typedef uid_t                     wapr_uid_t;
+typedef __kernel_uid_t                     wapr_uid_t;
 
 /**
  * Structure for determining group ownership.
  */
-typedef gid_t                     wapr_gid_t;
+typedef __kernel_gid_t                     wapr_gid_t;
 
 
 /**

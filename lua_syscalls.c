@@ -1,20 +1,16 @@
 #include "lua_syscalls.h"
-#include "syscalls.h"
 #include "utils.h"
 #include "lualib.h"
 #include "lauxlib.h"
 #include "wapr_user.h"
 
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <utime.h>
 
 
 int lusys_change_dir (lua_State *L)
 {
         apr_status_t rc;
 	const char *path = luaL_checkstring(L, 1);
-        rc = wrapper_sys_chdir(path);
+        rc = lkl_sys_chdir(path);
 	if (0 != rc)
         {
 		lua_pushnil (L);
@@ -40,7 +36,7 @@ int lusys_get_dir (lua_State *L)
 	char path[255+2];
         apr_status_t rc;
 
-        rc = wrapper_sys_getcwd(path, 255);
+        rc = lkl_sys_getcwd(path, 255);
         printf("wrapper_sys_getcwd ret [%d], [%s]\n", rc, path);
         if (rc <= 0)
         {
@@ -59,8 +55,8 @@ int lusys_mkdir (lua_State *L)
 {
 	const char *path = luaL_checkstring (L, 1);
 	int fail;
-	mode_t oldmask = wrapper_sys_umask( (mode_t)0 );
-	fail =  wrapper_sys_mkdir (path, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP |
+	__kernel_mode_t oldmask = lkl_sys_umask( (mode_t)0 );
+	fail =  lkl_sys_mkdir (path, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP |
 	                     S_IWGRP | S_IXGRP | S_IROTH | S_IXOTH );
 
 	if (fail) {
@@ -68,7 +64,7 @@ int lusys_mkdir (lua_State *L)
                 lua_pushfstring (L, "%s", lfd_apr_strerror_thunsafe(fail));
 		return 2;
 	}
-	wrapper_sys_umask (oldmask);
+	lkl_sys_umask (oldmask);
 	lua_pushboolean (L, 1);
 	return 1;
 }
@@ -78,7 +74,7 @@ int lusys_rmdir (lua_State *L)
 	const char *path = luaL_checkstring (L, 1);
 	int fail;
 
-	fail =  wrapper_sys_rmdir (path);
+	fail =  lkl_sys_rmdir (path);
 
 	if (fail) {
 		lua_pushnil (L);
@@ -96,7 +92,7 @@ int lusys_rmdir (lua_State *L)
 int lusys_utime (lua_State *L) 
 {
 	const char *file = luaL_checkstring (L, 1);
-	struct utimbuf utb, *buf;
+	struct __kernel_utimbuf utb, *buf;
         apr_status_t rc;
 
 	if (lua_gettop (L) == 1) /* set to current date/time */
@@ -107,7 +103,7 @@ int lusys_utime (lua_State *L)
 		utb.modtime = (time_t)luaL_optnumber (L, 3, utb.actime);
 		buf = &utb;
 	}
-        rc = wrapper_sys_utime (file, buf); 
+        rc = lkl_sys_utime (file, buf); 
 	if (0 != rc)
         {
 		lua_pushnil (L);
@@ -126,7 +122,7 @@ int lusys_utime (lua_State *L)
 int lusys_utimes (lua_State *L) 
 {
 	const char *file = luaL_checkstring (L, 1);
-	struct timeval utb, *buf;
+	struct __kernel_timeval utb, *buf;
         apr_status_t rc;
 
 	if (lua_gettop (L) == 1) /* set to current date/time */
@@ -137,7 +133,7 @@ int lusys_utimes (lua_State *L)
 		utb.tv_usec = (long)luaL_optnumber (L, 3, 0);
 		buf = &utb;
 	}
-        rc = wrapper_sys_utimes (file, buf); 
+        rc = lkl_sys_utimes (file, buf); 
 	if (0 != rc)
         {
 		lua_pushnil (L);

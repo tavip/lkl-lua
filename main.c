@@ -10,51 +10,78 @@
 #include <apr_atomic.h>
 #include <apr_getopt.h>
 #include <apr_file_io.h>
+#include <apr_file_info.h>
 
-#include "include/asm/callbacks.h"
-#include "syscalls.h"
-#include "syscall_helpers.h"
+#include <asm/lkl.h>
+#include <asm/disk.h>
+#include <asm/env.h>
+
 #include "utils.h"
 #include "lua_main.h"
-#include "lklops.h"
-#include "drivers/disk.h"
 
 apr_pool_t	* root_pool;
-
 static const char *script_name="default.lua";
-static const char *disk_image="disk";
-static const char *fs_type;
-static int ro=0;
 
 #ifdef LKL_FILE_APIS
-static dev_t devno;
+static const char *disk_image="disk";
+static const char *fs_type="ext3";
+static int ro=0;
+static __kernel_dev_t devno;
 static apr_file_t *disk_file;
-static int init_err;
 
-
-
-apr_thread_mutex_t *wait_init;
-
-int lkl_init_2(void)
+int lkl_init(void)
 {
+	apr_finfo_t fi;
 	apr_status_t rc;
 
-	if ((rc=apr_file_open(&disk_file, disk_image, APR_FOPEN_READ|(ro?0:APR_FOPEN_WRITE)|APR_FOPEN_BINARY,
-				  APR_OS_DEFAULT, root_pool)) != APR_SUCCESS) {
+	rc=apr_stat(&fi, disk_image, APR_FINFO_SIZE, root_pool);
+	if (rc != APR_SUCCESS) {
+		lfd_log(LFD_ERROR, "failed to stat disk image '%s': %s", disk_image, lfd_apr_strerror_thunsafe(rc));
+		return -1;
+	}
+
+	rc=apr_file_open(&disk_file, disk_image,
+			 APR_FOPEN_READ| (ro?0:APR_FOPEN_WRITE)|
+			 APR_FOPEN_BINARY, APR_OS_DEFAULT,
+			 root_pool);
+	if (rc != APR_SUCCESS) {
 		lfd_log(LFD_ERROR, "failed to open disk image '%s': %s", disk_image, lfd_apr_strerror_thunsafe(rc));
-		init_err=-1;
-		goto out;
+		return -1;
 	}
 
-	if (lkl_disk_add_disk(disk_file, &devno)) {
-		init_err=-1;
-		goto out;
+	devno=lkl_disk_add_disk(disk_file, disk_image, 0, fi.size/512);
+	if (devno == 0) {
+		apr_file_close(disk_file);
+		return -1;
 	}
-		
-out:
-	apr_thread_mutex_unlock(wait_init);
 
-	return init_err;
+	return 0;
+}
+
+int lkl_mount(void)
+{
+	char dev_str[]= { "/dev/xxxxxxxxxxxxxxxx" };
+	int err;
+
+	snprintf(dev_str, sizeof(dev_str), "/dev/%016x", devno);
+	err=lkl_sys_mknod(dev_str, S_IFBLK|0600, devno);
+	if (err != 0)
+		return err;
+
+
+	err=lkl_sys_mount(dev_str, "/root", (char*)fs_type, 0, 0);
+	if (err != 0)
+		return err;
+
+	err=lkl_sys_chdir("/root");
+	if (err != 0)
+		return err;
+
+	err=lkl_sys_chroot(".");
+	if (err != 0)
+		return err;
+
+	return 0;
 }
 #endif
 
@@ -65,7 +92,7 @@ static const apr_getopt_option_t opt_option[] = {
 	{ "fs-type", 't', TRUE, "filesystem type (ext3, etc.)" },
 	{ "diskname", 'd', TRUE, "path to disk (image) to use, default='disk'" },
 #endif
-	{ "file", 'f', TRUE, "path to script file to run, default='default.lua'" },
+        { "file", 'f', TRUE, "path to script file to run, default='default.lua'" },
 	{ "help", 'h', 0, "display this help and exit" },
 	{ NULL, 0, 0, NULL },
 };
@@ -97,6 +124,7 @@ static int parse_command_line(int argc, char const *const * argv)
 	{
 		switch (optch)
 		{
+#ifdef LKL_APIS
 		case 'r':
 			ro=1;
 			break;
@@ -106,6 +134,7 @@ static int parse_command_line(int argc, char const *const * argv)
 		case 'd':
 			disk_image=optarg;
 			break;
+#endif
 		case 'f':
 			script_name=optarg;
 			break;
@@ -146,35 +175,20 @@ int main(int argc, char const *const * argv, char const *const * engv)
 	if (parse_command_line(argc, argv) != 0)
 		return 3;
 
-
 	apr_atomic_init(root_pool);
 
-	syscall_helpers_init();
-
 #ifdef LKL_FILE_APIS
-	apr_thread_mutex_create(&wait_init, APR_THREAD_MUTEX_UNNESTED, root_pool);
-	apr_thread_mutex_lock(wait_init);
-	lkl_init(lkl_init_2);
-	apr_thread_mutex_lock(wait_init);
-
-	if (init_err != 0) {
-	    lkl_fini(LKL_FINI_DONT_UMOUNT_ROOT);
-	    return -1;
-	}
-
-	if ((rc=wrapper_sys_mkdir("/mnt", 0700))) {
-		lfd_log(LFD_ERROR, "failed to mkdir /mnt: %d", rc);
-		lkl_fini(LKL_FINI_DONT_UMOUNT_ROOT);
+	if (lkl_env_init(lkl_init, 16*1024*1024) != 0) 
 		return -1;
-	}
 
-	if ((rc=wrapper_sys_mount(disk_file, devno, NULL, ro)) < 0) {
+	if ((rc=lkl_mount()) < 0) {
 		//FIXME: add string error code; note that the error code is not
 		//compatible with apr (unless you are running on linux/i386); we
 		//most likely need error codes strings in lkl itself; need to
 		//fix other cases as well
+		lkl_sys_halt();
+		apr_file_close(disk_file);
 		lfd_log(LFD_ERROR, "failed to mount disk: %d", rc);
-		lkl_fini(LKL_FINI_DONT_UMOUNT_ROOT);
 		return -1;
 	}
 #endif 
@@ -184,11 +198,10 @@ int main(int argc, char const *const * argv, char const *const * engv)
 	printf("LUA code is not running any more. All will be obliterated.\n");
 
 #ifdef LKL_FILE_APIS
-	lkl_fini(0);
+	lkl_sys_umount("/", 0);
+	lkl_sys_halt();
 	apr_file_close(disk_file);
 #endif
-
-	syscall_helpers_fini();
 	return 0;
 }
 

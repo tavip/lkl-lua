@@ -3,6 +3,7 @@
 
 #include "lua.h"
 
+#include <asm/lkl.h>
 
 int lusys_change_dir (lua_State *L);
 int lusys_get_dir (lua_State *L);

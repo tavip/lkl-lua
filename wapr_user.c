@@ -1,7 +1,6 @@
 #ifdef LKL_FILE_APIS
 #include <apr_strings.h>
 #include "wapr_user.h"
-#include "syscalls.h"
 
 /**
  * Get the userid (and groupid) of the calling process
@@ -14,8 +13,8 @@ APR_DECLARE(apr_status_t) wapr_uid_current(wapr_uid_t *userid,
                                           wapr_gid_t *groupid,
                                           apr_pool_t *p)
 {
-    *userid = wrapper_sys_getuid();
-    *groupid = wrapper_sys_getgid();
+    *userid = lkl_sys_getuid();
+    *groupid = lkl_sys_getgid();
     return APR_SUCCESS;
 }
 
@@ -46,8 +45,8 @@ APR_DECLARE(apr_status_t) wapr_uid_get(wapr_uid_t *userid, wapr_gid_t *groupid,
                                       const char *username, apr_pool_t *p)
 {
     //TODO:FIXME: we currently find the CURRENT uid and gid, the function should find the uid and gid for the specified USERNAME.
-    *userid = wrapper_sys_getuid();
-    *groupid = wrapper_sys_getgid();
+    *userid = lkl_sys_getuid();
+    *groupid = lkl_sys_getgid();
     return APR_SUCCESS;
 }
 
@@ -93,7 +92,7 @@ APR_DECLARE(apr_status_t) wapr_gid_get(wapr_gid_t *groupid,
                                       const char *groupname, apr_pool_t *p)
 {
     //TODO:FIXME: we return the current user's GID because we don;t have a mappig between usernames and gids
-    *groupid = wrapper_sys_getgid();
+    *groupid = lkl_sys_getgid();
     return APR_SUCCESS;
 }
 
