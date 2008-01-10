@@ -30,16 +30,10 @@ static int ro=0;
 static __kernel_dev_t devno;
 static apr_file_t *disk_file;
 
-int lkl_init(void)
+int lkl_add_disk(void)
 {
-	apr_finfo_t fi;
 	apr_status_t rc;
-
-	rc=apr_stat(&fi, disk_image, APR_FINFO_SIZE, root_pool);
-	if (rc != APR_SUCCESS) {
-		lfd_log(LFD_ERROR, "failed to stat disk image '%s': %s", disk_image, lfd_apr_strerror_thunsafe(rc));
-		return -1;
-	}
+	apr_off_t off=0;
 
 	rc=apr_file_open(&disk_file, disk_image,
 			 APR_FOPEN_READ| (ro?0:APR_FOPEN_WRITE)|
@@ -50,7 +44,13 @@ int lkl_init(void)
 		return -1;
 	}
 
-	devno=lkl_disk_add_disk(disk_file, fi.size/512);
+	rc=apr_file_seek(disk_file, APR_END, &off);
+	if (rc != APR_SUCCESS) {
+		lfd_log(LFD_ERROR, "failed to seek to the end of'%s': %s", disk_image, lfd_apr_strerror_thunsafe(rc));
+		return -1;
+	}
+
+	devno=lkl_disk_add_disk(disk_file, off/512);
 	if (devno == 0) {
 		apr_file_close(disk_file);
 		return -1;
@@ -153,11 +153,14 @@ int main(int argc, char const *const * argv, char const *const * engv)
 	apr_atomic_init(root_pool);
 
 #ifdef LKL_FILE_APIS
-	if (lkl_env_init(lkl_init, 16*1024*1024) != 0) 
+	if (lkl_env_init(16*1024*1024) != 0) 
 		return -1;
 
-	if ((rc=lkl_mount_dev(devno, fs_type, 0, NULL, mount_point, sizeof(mount_point))) < 0 ||
-	    (rc=lkl_sys_chdir(mount_point)) < 0 || (rc=lkl_sys_chroot(".")) < 0) {
+	if ((rc=lkl_add_disk()) < 0 ||
+	    (rc=lkl_mount_dev(devno, fs_type, 0, NULL, mount_point,
+			      sizeof(mount_point))) < 0 ||
+	    (rc=lkl_sys_chdir(mount_point)) < 0 ||
+	    (rc=lkl_sys_chroot(".")) < 0) {
 		//FIXME: add string error code; note that the error code is not
 		//compatible with apr (unless you are running on linux/i386); we
 		//most likely need error codes strings in lkl itself; need to
